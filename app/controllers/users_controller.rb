@@ -1,4 +1,6 @@
 class UsersController < ApplicationController
+   before_action :logged_in_user, only: [:edit, :update]
+   before_action :correct_user,   only: [:edit, :update]
 
   def show
     @user = User.find(params[:id])
@@ -18,24 +20,18 @@ class UsersController < ApplicationController
     end
   end
 
-  private
-
-    def user_params
-      params.require(:user).permit(:name, :email, :password,
-                                   :password_confirmation)
-    end
-
+  def edit
+  end
+  
   # PATCH/PUT /users/1
   # PATCH/PUT /users/1.json
   def update
-    respond_to do |format|
-      if @user.update(user_params)
-        format.html { redirect_to @user, notice: 'User was successfully updated.' }
-        format.json { render :show, status: :ok, location: @user }
-      else
-        format.html { render :edit }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
-      end
+    if @user.update_attributes(user_params)
+      # Handle a successful update.
+      flash[:success] = "Profile updated"
+      redirect_to @user
+    else
+      render 'edit'
     end
   end
 
@@ -49,4 +45,26 @@ class UsersController < ApplicationController
     end
   end
     # Never trust parameters from the scary internet, only allow the white list through.
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+
+    # Before filters
+    # Confirms a logged-in user.
+    def logged_in_user
+      unless logged_in?
+        store_location
+        flash[:danger] = "Please log in."
+        redirect_to login_url
+      end
+    end
+
+    # Confirms the correct user.
+    def correct_user
+      @user = User.find(params[:id])
+      redirect_to(root_url) unless current_user?(@user)
+    end
 end
